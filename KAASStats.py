@@ -50,7 +50,8 @@ def main(argv) -> None:
                 sys.exit(2)
 
     ko_counts = read_brite(input_file)
-    build_graph(ko_counts)
+    # print(ko_counts)
+    build_graph(ko_counts, top_trans)
 
 
 def read_brite(infile) -> dict:
@@ -72,12 +73,18 @@ def read_brite(infile) -> dict:
     return ko_counts
 
 
+def build_graph(ko_counts, top):
+    ko_counts_sorted = dict(sorted(ko_counts.items(), key=lambda item: item[1], reverse=True))
 
+    ko_name = list(ko_counts_sorted.keys())[:top]
+    ko_count = list(ko_counts_sorted.values())[:top]
 
-def build_graph(ko_counts):
+    fig = plt.figure(figsize=(10,5))
+
+    plt.bar(ko_name, ko_count, width=0.4)
+
+    plt.show()
     pass
-
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])
