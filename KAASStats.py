@@ -2,8 +2,8 @@
 This program will break down BRITE hierarchies created by KAAS (KEGG Automatic Annotation Server)
 
 author: Reis Gadsden 17-08-2022
-version: 17-08-2022
-last modified: Reis Gadsden 17-08-2022
+version: 21-09-2022
+last modified: Reis Gadsden 21-09-2022
 github: https://github.com/reismgadsden/KAASStats
 """
 import sys
@@ -50,7 +50,6 @@ def main(argv) -> None:
                 sys.exit(2)
 
     ko_counts = read_brite(input_file)
-    # print(ko_counts)
     build_graph(ko_counts, top_trans)
 
 
@@ -66,11 +65,17 @@ def read_brite(infile) -> dict:
 
     ko_counts = dict()
 
-    for head in brite["children"]:
-        for sub in head["children"]:
-            if "children" in sub:
-                ko_counts[sub["name"]] = len(sub["children"])
+    deconstruct_json(ko_counts, brite["children"])
+
     return ko_counts
+
+
+def deconstruct_json(ko_dict, brite):
+    for head in brite:
+        if "children" in head:
+            deconstruct_json(ko_dict, head["children"])
+            if "children" not in head["children"] and re.fullmatch(r"^TRINITY_.*$", head["children"][0]["name"]):
+                ko_dict[head["name"]] = len(head["children"])
 
 
 def build_graph(ko_counts, top):
