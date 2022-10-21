@@ -24,15 +24,24 @@ def main(argv) -> None:
     output_file = ""
     output_file_regex = r"^[\w\-. ]+$"
 
+    step = 1
+
+    title = ""
+
+    no_title = False
+
+    bin_regex = r"^[0-9]*\.[0-9]+$"
+    bin = 0.8
+
     try:
-        opts, args = getopt.getopt(argv, "hi:t:n:", ["input=", "top=", "name=", "help="])
+        opts, args = getopt.getopt(argv, "hzi:t:n:s:g:b:", ["input=", "top=", "name=", "help=", "step=", "title=", "no-title=", "bin="])
     except getopt.GetoptError:
         print("KAASStats.py -i <inputfile.json> -t # -n outfile_name")
         sys.exit(2)
     if (("-i" not in argv and "--input" not in argv) ^ ("-t" not in argv and "--top" not in argv)) \
             and ("-h" not in argv and "--help" not in argv):
-        print("KAASStats.py -i <inputfile.json> -t # -n outfile_name\n\t" +
-              "KAASStats.py --input <inputfile.json> --top #\n\t" +
+        print("KAASStats.py -i <inputfile.json> -t # -n outfile_name -s #\n\t" +
+              "KAASStats.py --input <inputfile.json> --top # --step #\n\t" +
               "KAASStats.py -h\n\tKAASStat.py --help")
 
     for opt, arg in opts:
@@ -57,9 +66,28 @@ def main(argv) -> None:
             else:
                 print("-n/--name must be a valid file name conforming to pattern: ^[\w\-. ]+$")
                 exit(2)
+        elif opt in ("-s", "--step"):
+            if re.fullmatch(top_regex, arg) and int(arg.strip().replace(" ", "").replace("\n", "").replace("\r", "")) > 0:
+                print(re.fullmatch(top_regex, arg))
+                step = int(arg.strip().replace(" ", "").replace("\n", "").replace("\r", ""))
+            else:
+                print("-s/--step argument must be a positive integer")
+                sys.exit(2)
+        elif opt in ("-b", "--bin"):
+            if re.fullmatch(bin_regex, arg) and float(arg.strip().replace(" ", "").replace("\n", "").replace("\r", "")) > 0:
+                bin = float(arg.strip().replace(" ", "").replace("\n", "").replace("\r", ""))
+            else:
+                #print(re.fullmatch(bin_regex, arg))
+                print("-b/--bin argument must be a positive floating point number")
+                sys.exit(2)
+        elif opt in ("-g", "title"):
+            title = arg.strip().replace("\n", "").replace("\r", "")
+        elif opt in ("-z", "--no-title"):
+            no_title = True
+
 
     ko_counts = read_brite(input_file)
-    build_graph(ko_counts, top_trans, input_file.replace(".json", ""), output_file)
+    build_graph(ko_counts, top_trans, input_file.replace(".json", ""), output_file, step=step, title=title, no_title=no_title, bin=bin)
 
 
 def read_brite(infile) -> dict:
@@ -90,21 +118,23 @@ def deconstruct_json(ko_dict, brite):
                     ko_dict[head["name"]] = len(head["children"])
 
 
-def build_graph(ko_counts, top, in_file, out_name=""):
+def build_graph(ko_counts, top, in_file, out_name="", step=1, title="", no_title=False, bin=0.8):
     ko_counts_sorted = dict(sorted(ko_counts.items(), key=lambda item: item[1], reverse=True))
 
     ko_name = list(ko_counts_sorted.keys())[:top]
     ko_count = list(ko_counts_sorted.values())[:top]
 
     #fig, ax = plt.subplots()
-
-    plt.suptitle("Hits per BRITE KO: Transporters")
-    plt.xlabel("BRITE Name")
+    if not no_title:
+        if title != "":
+            title = ": " + title
+        plt.suptitle("Hits per BRITE KO" + title)
+    #plt.xlabel("BRITE Name")
     plt.ylabel("# of hits")
     plt.ylim(0, max(ko_count) + 1)
-    plt.yticks(numpy.arange(0, max(ko_count) + 2))
+    plt.yticks(numpy.arange(0, max(ko_count) + 2, step))
 
-    plt.bar(ko_name, ko_count, width=0.4, color="black")
+    plt.bar(ko_name, ko_count, width=bin, color="black")
     plt.xticks(rotation=45, ha="right", size="small")
 
     plt.tight_layout()
