@@ -68,7 +68,6 @@ def main(argv) -> None:
                 exit(2)
         elif opt in ("-s", "--step"):
             if re.fullmatch(top_regex, arg) and int(arg.strip().replace(" ", "").replace("\n", "").replace("\r", "")) > 0:
-                print(re.fullmatch(top_regex, arg))
                 step = int(arg.strip().replace(" ", "").replace("\n", "").replace("\r", ""))
             else:
                 print("-s/--step argument must be a positive integer")
