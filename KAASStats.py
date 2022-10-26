@@ -12,6 +12,7 @@ import re
 import json
 import numpy
 import matplotlib.pyplot as plt
+import warnings
 
 
 def main(argv) -> None:
@@ -33,8 +34,10 @@ def main(argv) -> None:
     bin_regex = r"^[0-9]*\.[0-9]+$"
     bin = 0.8
 
+    indv_names = False
+
     try:
-        opts, args = getopt.getopt(argv, "hzi:t:n:s:g:b:", ["input=", "top=", "name=", "help=", "step=", "title=", "no-title=", "bin="])
+        opts, args = getopt.getopt(argv, "hzxi:t:n:s:g:b:", ["input=", "top=", "name=", "help=", "step=", "title=", "no-title=", "bin=", "indv_names"])
     except getopt.GetoptError:
         print("KAASStats.py -i <inputfile.json> -t # -n outfile_name")
         sys.exit(2)
@@ -83,13 +86,14 @@ def main(argv) -> None:
             title = arg.strip().replace("\n", "").replace("\r", "")
         elif opt in ("-z", "--no-title"):
             no_title = True
+        elif opt in ("-x", "indv_names"):
+            indv_names = True
 
-
-    ko_counts = read_brite(input_file)
+    ko_counts = read_brite(input_file, indv_names)
     build_graph(ko_counts, top_trans, input_file.replace(".json", ""), output_file, step=step, title=title, no_title=no_title, bin=bin)
 
 
-def read_brite(infile) -> dict:
+def read_brite(infile, indv_names) -> dict:
     brite = ""
 
     try:
@@ -100,9 +104,10 @@ def read_brite(infile) -> dict:
         sys.exit(2)
 
     ko_counts = dict()
-
-    deconstruct_json(ko_counts, brite["children"])
-
+    if not indv_names:
+        deconstruct_json(ko_counts, brite["children"])
+    else:
+        deconstruct_json_indv(ko_counts, brite["children"])
     return ko_counts
 
 
@@ -115,6 +120,20 @@ def deconstruct_json(ko_dict, brite):
                     ko_dict[head["name"] + "_a"] = len(head["children"])
                 else:
                     ko_dict[head["name"]] = len(head["children"])
+
+
+def deconstruct_json_indv(ko_dict, brite):
+    pattern = r"[EC:[0-9\.\s\-]*]"
+    for head in brite:
+        if "children" in head:
+            deconstruct_json_indv(ko_dict, head["children"])
+            if "children" not in head["children"] and re.fullmatch(r"^TRINITY_.*$", head["children"][0]["name"]):
+                for name in head["children"]:
+                    split_name = re.sub(pattern, ""," ".join(name["name"].split(" ")[3:])).strip()
+                    if split_name in ko_dict:
+                        ko_dict[split_name] += 1
+                    else:
+                        ko_dict[split_name] = 1
 
 
 def build_graph(ko_counts, top, in_file, out_name="", step=1, title="", no_title=False, bin=0.8):
@@ -130,16 +149,19 @@ def build_graph(ko_counts, top, in_file, out_name="", step=1, title="", no_title
         plt.suptitle("Hits per BRITE KO" + title)
     #plt.xlabel("BRITE Name")
     plt.ylabel("# of hits")
-    plt.ylim(0, max(ko_count) + 1)
-    plt.yticks(numpy.arange(0, max(ko_count) + 2, step))
 
     plt.bar(ko_name, ko_count, width=bin, color="black")
     plt.xticks(rotation=45, ha="right", size="small")
 
-    plt.tight_layout()
+    plt.autoscale()
+    plt.ylim(0, max(ko_count) + 1)
+    plt.yticks(numpy.arange(0, max(ko_count) + 2, step))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        plt.tight_layout()
 
     if out_name == "":
-        plt.savefig(in_file + "_bar.png")
+        plt.savefig(in_file + "_bar.png", bbox_inches="tight")
         return
     plt.savefig(out_name + ".png")
 
