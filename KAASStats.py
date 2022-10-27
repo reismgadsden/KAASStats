@@ -19,7 +19,7 @@ def main(argv) -> None:
     input_file = ""
     input_regex = r"^(.)*\.json$"
 
-    top_trans = 0
+    top_trans = 5
     top_regex = r"^[0-9]+$"
 
     output_file = ""
@@ -37,19 +37,35 @@ def main(argv) -> None:
     indv_names = False
 
     try:
-        opts, args = getopt.getopt(argv, "hzxi:t:n:s:g:b:", ["input=", "top=", "name=", "help=", "step=", "title=", "no-title=", "bin=", "indv_names"])
+        opts, args = getopt.getopt(argv, "hzxi:t:n:s:g:b:", ["input=", "top=", "name=", "help=", "step=", "title=", "no-title=", "bin=", "indv-names="])
     except getopt.GetoptError:
         print("KAASStats.py -i <inputfile.json> -t # -n outfile_name")
         sys.exit(2)
-    if (("-i" not in argv and "--input" not in argv) ^ ("-t" not in argv and "--top" not in argv)) \
-            and ("-h" not in argv and "--help" not in argv):
-        print("KAASStats.py -i <inputfile.json> -t # -n outfile_name -s #\n\t" +
-              "KAASStats.py --input <inputfile.json> --top # --step #\n\t" +
-              "KAASStats.py -h\n\tKAASStat.py --help")
+    if ("-i" not in argv and "--input" not in argv)  and ("-h" not in argv and "--help" not in argv):
+        print("KAASStats.py -i/--input <inputfile.json>\nOptional Arguments:\n\t"
+              "-h/--help - Displays this help menu"
+              "-n/--name - <String> Name of the output file (Default: input file name appended with '_bar')\n\t"
+              "-t/--top - <Int> Maximum number of bars to display (Default: 5)\n\t"
+              "-s/--step - <Int> The scale of the y-axis (Default: 1)\n\t"
+              "-b/--bin - <Float> The width of the bars (Default : 0.8)\n\t"
+              "-g/--title - <String> The title of the graph (Default: '')\n\t"
+              "-z/--no-title <None> This will remove the title from the graph. This flag requires no arguments\n\t"
+              "-x/--indv-names <None> This will group hits by individual hits instead of by family. This flag requires no arguments\n"
+              "For more info on these flags please refer to the documentation: https://github.com/reismgadsden/KAASStats")
+        exit(-1)
 
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            print("KAASStats.py -i <inputfile.json> -t #")
+            print("KAASStats.py -i/--input <inputfile.json>\nOptional Arguments:\n\t"
+                  "-h/--help - Displays this help menu"
+                  "-n/--name - <String> Name of the output file (Default: input file name appended with '_bar')\n\t"
+                  "-t/--top - <Int> Maximum number of bars to display (Default: 5)\n\t"
+                  "-s/--step - <Int> The scale of the y-axis (Default: 1)\n\t"
+                  "-b/--bin - <Float> The width of the bars (Default : 0.8)\n\t"
+                  "-g/--title - <String> The title of the graph (Default: '')\n\t"
+                  "-z/--no-title <None> This will remove the title from the graph. This flag requires no arguments\n\t"
+                  "-x/--indv-names <None> This will group hits by individual hits instead of by family. This flag requires no arguments\n"
+                  "For more info on these flags please refer to the documentation: https://github.com/reismgadsden/KAASStats")
             sys.exit()
         elif opt in ("-i", "--input"):
             if re.fullmatch(input_regex, arg):
@@ -86,7 +102,7 @@ def main(argv) -> None:
             title = arg.strip().replace("\n", "").replace("\r", "")
         elif opt in ("-z", "--no-title"):
             no_title = True
-        elif opt in ("-x", "indv_names"):
+        elif opt in ("-x", "indv-names"):
             indv_names = True
 
     ko_counts = read_brite(input_file, indv_names)
