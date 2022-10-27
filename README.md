@@ -1,5 +1,5 @@
 # KAAS Stats
-By: Reis Gadsden
+By: Reis Gadsden\
 <a href="https://github.com/reismgadsden/KAASStats">Github</a>
 
 ---
